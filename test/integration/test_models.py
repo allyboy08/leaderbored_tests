@@ -19,4 +19,21 @@ class TestModels(BaseTest):
             # db.session.delete(note)
             # db.session.commit()
             
+    def test_work(self):
+        with self.app_context():
+            work = Work(title='test', description='working', date=17 / 5 / 2021, user_id=2, status='online', points=100)
             
+            db.session.query(Work).filter_by(title='test').first()
+            
+    
+    def test_user(self):
+        with self.app_context():
+            user = User(email='test@test.com', password='test', first_name='tester', team_id=3, team_leader=True, points=100)
+            
+            db.session.query(User).filter_by(email='test@test.com').first()
+    
+    def test_team(self):
+        with self.app_context():
+            team = Team(name='tester')
+            
+            db.session.query(Team).filter_by(name='tester').first()
