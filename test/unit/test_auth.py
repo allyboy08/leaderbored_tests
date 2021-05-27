@@ -19,6 +19,14 @@ class TestSignUp(BaseTest):
             self.assertIn(b'Sign Up', response.data)
             self.assertEqual(current_user.get_id(), AnonymousUserMixin.get_id(self))
             
+    def test_valid_sign_up(self):
+        with self.app:
+            response = self.app.post('/sign-up', data=dict(email='ok@gmail.com', firstName='bob', password1= '1234567', password2= '1234567'), follow_redirects=True)
+            self.assertIn(b'Account created', response.data)
+            self.assertEqual(response.status_code, 200)
+            user = db.session.query(User).filter_by(email='ok@gmail.com').first()
+            self.assertTrue(user)
+            
     def test_sign_up_post_short_email(self):
         with self.app:
             response = self.app.post('/sign-up', data=dict(email='ok', firstName='bob', password1= '1234567', password2= '1234567'), follow_redirects=True)
@@ -37,6 +45,15 @@ class TestSignUp(BaseTest):
             self.assertFalse(user)
             self.assertIsNone(current_user.get_id())
             
+    def test_sign_up_post_short_password(self):
+        with self.app:
+            response = self.app.post('/sign-up', data=dict(email='test@gmail.com', firstName='mark', password1= '012345', password2= '012345'), follow_redirects=True)
+            self.assertIn(b'Password must be at least 7 characters', response.data)
+            self.assertEqual(response.status_code, 200)
+            user = db.session.query(User).filter_by(email='test@gmail.com').first()
+            self.assertFalse(user)
+            self.assertIsNone(current_user.get_id())
+    
     def test_sign_up_post_passwords_mismatched(self):
         with self.app:
             response = self.app.post('/sign-up', data=dict(email='test@gmail.com', firstName='kevin', password1= '01234567', password2= '1234567'), follow_redirects=True)
@@ -45,6 +62,22 @@ class TestSignUp(BaseTest):
             user = db.session.query(User).filter_by(email='test@gmail.com').first()
             self.assertFalse(user)
             self.assertIsNone(current_user.get_id())
+            
+    def test_sign_up_post_user_exists(self):
+        with self.app:
+            # create user in db 
+            response = self.app.post('/sign-up', data=dict(email='bob@gmail.com', firstName='steve', password1= '01234567', password2= '01234567'), follow_redirects=True)
+            # assert that user exists in db
+            user = db.session.query(User).filter_by(email='bob@gmail.com').first()
+            self.assertTrue(user)
+            # create post req with same email (repeat)
+            response = self.app.post('/sign-up', data=dict(email='bob@gmail.com', firstName='qwerty', password1= '1234567', password2= '1234567'), follow_redirects=True)
+            # user = db.session.query(User).filter_by(email='bob@gmail.com').first()
+            # self.assertTrue(user)
+            
+            # assert that email already in use flash message appears
+            self.assertIn(b'Email already in use', response.data) 
+            
             
 class TestLogin(BaseTest):
     def test_login_page_loads(self):
@@ -75,16 +108,5 @@ class TestLogout(BaseTest):
             response = self.app.get('/log-out', follow_redirects=False)
             self.assertEqual(response.status_code, 302)
             
-    def test_logout_route_while_logged_in(self):
-        with self.app:
-            # sign up
-            # log in
-            response = self.app.get('/logout', follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
     
-    
-
-            self.assertIn('/log-in', request.url)
-            # after log out test current user is none
-            self.assertFalse(current_user.is_active)
 

@@ -49,7 +49,7 @@ class TestLogin(BaseTest):
             self.assertIn(b'Logged in successfully', response.data)
             
             
-            # self.assertIn(b'Notes', response.data)
+            self.assertIn(b'Notes', response.data)
     
     def test_login_invalid_user(self):
         with self.app:
